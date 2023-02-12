@@ -16,6 +16,9 @@ npm i firestore-react-hooks
 Returns get, set, delete and subscribe functions for a document.
 
 ```tsx
+import { useState, useEffect, useCallback } from "react";
+import { useDoc } from "firestore-react-hooks";
+
 function SomeComponent() {
   const { getDoc, setDoc } = useDoc<{ title: string }>(
     "/some-collection/doc-id"
