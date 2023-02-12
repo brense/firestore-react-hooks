@@ -29,7 +29,7 @@ function SomeComponent() {
   }, [getDoc]);
 
   const handleUpdateDoc = useCallback(async () => {
-    await setDoc("/some-collection/doc-id", { title: "Some title" });
+    await setDoc({ title: "Some title" });
   }, [setDoc]);
 
   return (
