@@ -4,18 +4,36 @@
   "version": "0.0.1-0",
   "main": "dist/index.js",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brense/firestore-react-hooks.git"
+  },
+  "keywords": [
+    "firestore",
+    "hooks",
+    "react"
+  ],
+  "author": "Rense Bakker",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/brense/firestore-react-hooks/issues"
+  },
+  "homepage": "https://github.com/brense/firestore-react-hooks.git#readme",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "prepublishOnly": "tsc --p tsconfig.npm.json"
   },
-  "dependencies": {
+  "peerDdependencies": {
     "firebase": "^9.16.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^16.8.0",
+    "react-dom": "^16.8.0"
   },
   "devDependencies": {
+    "firebase": "^9.16.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "@types/react": "^18.0.26",
     "@types/react-dom": "^18.0.9",
     "@vitejs/plugin-react": "^3.0.0",
