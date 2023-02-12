@@ -1,19 +1,19 @@
 import { deleteDoc, doc, DocumentData, DocumentReference, DocumentSnapshot, getDoc, onSnapshot, setDoc, SetOptions, Unsubscribe } from 'firebase/firestore'
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import useFirestore from './useFirestore'
 
-type UseDocFromPath<T = DocumentData | DocumentSnapshot<DocumentData>> = {
-  getDoc: () => Promise<T>
+type UseDocFromPath<T = DocumentData, R = DocumentSnapshot<T> | T> = {
+  getDoc: () => Promise<R>
   setDoc: (data: T, options?: SetOptions) => Promise<void>
   deleteDoc: () => Promise<void>
-  subscribe: (next: (snapshot: T) => void) => Unsubscribe
+  subscribe: (next: (snapshot: R) => void) => Unsubscribe
 }
 
-type UseDoc<T = DocumentData> = {
-  getDoc: (path: string) => Promise<DocumentSnapshot<T>>
+type UseDoc<T = DocumentData, R = DocumentSnapshot<T> | T> = {
+  getDoc: (path: string) => Promise<R>
   setDoc: (path: string, data: T, options?: SetOptions) => Promise<void>
   deleteDoc: (path: string) => Promise<void>
-  subscribe: (path: string, next: (snapshot: DocumentSnapshot<T>) => void) => Unsubscribe
+  subscribe: (path: string, next: (snapshot: R) => void) => Unsubscribe
 }
 
 type UseDocOptions = { returnDocumentData?: false }
@@ -24,18 +24,18 @@ function isUseDoc(params: UseDocParams | UseDocParamsFromPath): params is UseDoc
   return typeof params[0] !== 'string'
 }
 
-function useDoc<T = DocumentData>(options?: UseDocOptions): UseDoc<DocumentSnapshot<T>>
-function useDoc<T = DocumentData>(options?: Omit<UseDocOptions, 'returnDocumentData'> & { returnDocumentData: true }): UseDoc<T & { id: string }>
-function useDoc<T = DocumentData>(path: string, options?: UseDocOptions): UseDocFromPath<DocumentSnapshot<T>>
-function useDoc<T = DocumentData>(path: string, options?: Omit<UseDocOptions, 'returnDocumentData'> & { returnDocumentData: true }): UseDocFromPath<T & { id: string }>
+function useDoc<T = DocumentData>(options?: UseDocOptions): UseDoc<T, DocumentSnapshot<T>>
+function useDoc<T = DocumentData>(options?: Omit<UseDocOptions, 'returnDocumentData'> & { returnDocumentData: true }): UseDoc<T, T & { id: string }>
+function useDoc<T = DocumentData>(path: string, options?: UseDocOptions): UseDocFromPath<T, DocumentSnapshot<T>>
+function useDoc<T = DocumentData>(path: string, options?: Omit<UseDocOptions, 'returnDocumentData'> & { returnDocumentData: true }): UseDocFromPath<T, T & { id: string }>
 function useDoc<T = DocumentData>(...params: UseDocParams | UseDocParamsFromPath) {
   const firestore = useFirestore()
-  const [path, options] = isUseDoc(params) ? [, ...params] : params
+  const [path, options] = isUseDoc(params) ? [undefined, ...params] : params
   const { returnDocumentData = false } = options || {}
 
   const getDocumentReference = useCallback((path: string) => {
     return doc(firestore, path) as DocumentReference<T>
-  }, [firestore])
+  }, [])
 
   const getFunc = useCallback(async (path: string) => {
     const snapshot = await getDoc<T>(getDocumentReference(path))
@@ -68,12 +68,12 @@ function useDoc<T = DocumentData>(...params: UseDocParams | UseDocParamsFromPath
 
   const subscribeFromPath = useCallback((next: (snapshot: DocumentSnapshot<T> | (T & { id: string })) => void) => subscribeFunc(path!, next), [path, subscribeFunc])
 
-  return {
+  return useMemo(() => ({
     getDoc: !path ? getFunc : getFromPath,
     setDoc: !path ? setFunc : setFromPath,
     deleteDoc: !path ? deleteFunc : deleteFromPath,
     subscribe: !path ? subscribeFunc : subscribeFromPath
-  }
+  }), [getFunc, getFromPath, setFunc, setFromPath, deleteFunc, deleteFromPath, subscribeFunc, subscribeFromPath, path])
 }
 
 export default useDoc

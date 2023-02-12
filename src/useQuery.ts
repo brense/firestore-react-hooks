@@ -1,13 +1,14 @@
 import { AggregateField, AggregateQuerySnapshot, collection, collectionGroup, CollectionReference, DocumentData, Firestore, getCountFromServer, getDocs, onSnapshot, Query, query, QueryConstraint, QuerySnapshot, Unsubscribe } from 'firebase/firestore'
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
+import { UseCollectionOptions, UseCollectionOptionsReturnDocData } from './useCollection'
 
-export type UseQuery<T = DocumentData | QuerySnapshot<DocumentData>> = {
-  getDocs: () => Promise<T>
-  countDocs: () => Promise<AggregateQuerySnapshot<{ count: AggregateField<number> }> | number> // TODO:...
-  subscribe: (next: (snapshot: T) => void) => Unsubscribe
+export type UseQuery<T = DocumentData, R = QuerySnapshot<T> | T[]> = {
+  getDocs: () => Promise<R>
+  countDocs: () => Promise<AggregateQuerySnapshot<{ count: AggregateField<number> }> | number>
+  subscribe: (next: (snapshot: R) => void) => Unsubscribe
 }
 
-type UseCollectionOptions = { returnDocumentData?: false }
+type UseCollectionParams<T = DocumentData> = Parameters<(q: Query<T>, options?: Omit<UseCollectionOptions, 'returnDocumentData'> & { returnDocumentData?: boolean }) => void>
 
 export function makeQuery<T = DocumentData>(firestore: Firestore, collectionPath: string, ...queryConstraints: QueryConstraint[]) {
   return query<T>(collection(firestore, collectionPath) as CollectionReference<T>, ...queryConstraints)
@@ -17,7 +18,10 @@ export function makeCollectionGroupQuery<T = DocumentData>(firestore: Firestore,
   return query<T>(collectionGroup(firestore, collectionPath) as CollectionReference<T>, ...queryConstraints)
 }
 
-function useQuery<T = DocumentData>(q: Query<T>, options?: UseCollectionOptions): UseQuery {
+function useQuery<T = DocumentData>(q: Query<T>, options: UseCollectionOptionsReturnDocData): UseQuery<T, Array<T & { id: string }>>
+function useQuery<T = DocumentData>(q: Query<T>, options?: UseCollectionOptions): UseQuery<T, QuerySnapshot<T>>
+function useQuery<T = DocumentData>(...params: UseCollectionParams<T>) {
+  const [q, options] = params
   const { returnDocumentData = false } = options || {}
 
   const getFunc = useCallback(async () => {
@@ -48,11 +52,11 @@ function useQuery<T = DocumentData>(q: Query<T>, options?: UseCollectionOptions)
     })
   }, [q, returnDocumentData])
 
-  return {
+  return useMemo(() => ({
     getDocs: getFunc,
     countDocs: countFunc,
     subscribe
-  }
+  }), [getFunc, countFunc, subscribe])
 }
 
 export default useQuery
