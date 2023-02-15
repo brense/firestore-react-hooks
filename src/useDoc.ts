@@ -1,10 +1,11 @@
-import { deleteDoc, doc, DocumentData, DocumentReference, DocumentSnapshot, getDoc, onSnapshot, setDoc, SetOptions, Unsubscribe } from 'firebase/firestore'
+import { deleteDoc, doc, DocumentData, DocumentReference, DocumentSnapshot, getDoc, onSnapshot, setDoc, SetOptions, Unsubscribe, updateDoc, UpdateData } from 'firebase/firestore'
 import { useCallback, useMemo } from 'react'
 import useFirestore from './useFirestore'
 
 type UseDocFromPath<T = DocumentData, R = DocumentSnapshot<T> | T> = {
   getDoc: () => Promise<R>
   setDoc: (data: T, options?: SetOptions) => Promise<void>
+  updateDoc: (data: UpdateData<T>) => Promise<void>
   deleteDoc: () => Promise<void>
   subscribe: (next: (snapshot: R) => void) => Unsubscribe
 }
@@ -12,6 +13,7 @@ type UseDocFromPath<T = DocumentData, R = DocumentSnapshot<T> | T> = {
 type UseDoc<T = DocumentData, R = DocumentSnapshot<T> | T> = {
   getDoc: (path: string) => Promise<R>
   setDoc: (path: string, data: T, options?: SetOptions) => Promise<void>
+  updateDoc: (path: string, data: UpdateData<T>) => Promise<void>
   deleteDoc: (path: string) => Promise<void>
   subscribe: (path: string, next: (snapshot: R) => void) => Unsubscribe
 }
@@ -50,6 +52,12 @@ function useDoc<T = DocumentData>(...params: UseDocParams | UseDocParamsFromPath
 
   const setFromPath = useCallback((data: T, options?: SetOptions) => setFunc(path!, data, options), [path, setFunc])
 
+  const updateFunc = useCallback(async (path: string, data: UpdateData<T>) => {
+    return await updateDoc<T>(getDocumentReference(path), data)
+  }, [getDocumentReference])
+
+  const updateFromPath = useCallback((data: UpdateData<T>) => updateFunc(path!, data), [path, updateFunc])
+
   const deleteFunc = useCallback(async (path: string) => {
     return await deleteDoc(getDocumentReference(path))
   }, [getDocumentReference])
@@ -71,9 +79,10 @@ function useDoc<T = DocumentData>(...params: UseDocParams | UseDocParamsFromPath
   return useMemo(() => ({
     getDoc: !path ? getFunc : getFromPath,
     setDoc: !path ? setFunc : setFromPath,
+    updateDoc: !path ? updateFunc : updateFromPath,
     deleteDoc: !path ? deleteFunc : deleteFromPath,
     subscribe: !path ? subscribeFunc : subscribeFromPath
-  }), [getFunc, getFromPath, setFunc, setFromPath, deleteFunc, deleteFromPath, subscribeFunc, subscribeFromPath, path])
+  }), [getFunc, getFromPath, setFunc, setFromPath, updateFunc, updateFromPath, deleteFunc, deleteFromPath, subscribeFunc, subscribeFromPath, path])
 }
 
 export default useDoc
