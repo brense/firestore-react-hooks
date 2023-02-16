@@ -1,10 +1,11 @@
-import { addDoc, collection, DocumentData, DocumentReference, QuerySnapshot, WithFieldValue } from 'firebase/firestore'
+import { addDoc, collection, CollectionReference, DocumentData, DocumentReference, QuerySnapshot, WithFieldValue } from 'firebase/firestore'
 import { useCallback, useMemo } from 'react'
 import useFirestore from './useFirestore'
 import useQuery, { makeQuery, UseQuery } from './useQuery'
 
 type UseCollectionFromPath<T = DocumentData, R = QuerySnapshot<T> | T[]> = UseQuery<T, R> & {
   addDoc: (data: WithFieldValue<T>) => Promise<DocumentReference<T>>
+  ref: CollectionReference<T>
 }
 
 export type UseCollectionOptions = { returnDocumentData?: false }
@@ -25,8 +26,9 @@ function useCollection<T = DocumentData>(...params: UseCollectionParams) {
 
   return useMemo(() => ({
     ...functions,
-    addDoc: addFunc
-  }), [functions, addFunc])
+    addDoc: addFunc,
+    ref: collection(firestore, path)
+  }), [functions, addFunc, firestore, path])
 }
 
 export default useCollection
