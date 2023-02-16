@@ -8,6 +8,7 @@ type UseDocFromPath<T = DocumentData, R = DocumentSnapshot<T> | T> = {
   updateDoc: (data: UpdateData<T>) => Promise<void>
   deleteDoc: () => Promise<void>
   subscribe: (next: (snapshot: R) => void) => Unsubscribe
+  ref: DocumentReference<T>
 }
 
 type UseDoc<T = DocumentData, R = DocumentSnapshot<T> | T> = {
@@ -81,8 +82,9 @@ function useDoc<T = DocumentData>(...params: UseDocParams | UseDocParamsFromPath
     setDoc: !path ? setFunc : setFromPath,
     updateDoc: !path ? updateFunc : updateFromPath,
     deleteDoc: !path ? deleteFunc : deleteFromPath,
-    subscribe: !path ? subscribeFunc : subscribeFromPath
-  }), [getFunc, getFromPath, setFunc, setFromPath, updateFunc, updateFromPath, deleteFunc, deleteFromPath, subscribeFunc, subscribeFromPath, path])
+    subscribe: !path ? subscribeFunc : subscribeFromPath,
+    ...path ? { ref: getDocumentReference(path) } : {}
+  }), [getFunc, getFromPath, setFunc, setFromPath, updateFunc, updateFromPath, deleteFunc, deleteFromPath, subscribeFunc, subscribeFromPath, path, getDocumentReference])
 }
 
 export default useDoc
